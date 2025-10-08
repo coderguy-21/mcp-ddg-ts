@@ -1,0 +1,34 @@
+[
+  {
+    "url": "stackoverflow.com",
+    "keywords": ["javascript", "typescript", "node", "npm", "programming", "code", "error", "function", "async", "promise", "debugging"]
+  },
+  {
+    "url": "github.com",
+    "keywords": ["repository", "repo", "source code", "git", "open source", "library", "package", "sdk", "api", "documentation"]
+  },
+  {
+    "url": "developer.mozilla.org",
+    "keywords": ["mdn", "javascript", "web api", "browser", "html", "css", "dom", "fetch", "cors", "http"]
+  },
+  {
+    "url": "npmjs.com",
+    "keywords": ["npm", "package", "module", "install", "dependency", "node modules", "yarn"]
+  },
+  {
+    "url": "reddit.com",
+    "keywords": ["reddit", "discussion", "community", "opinion", "review", "experience", "recommendation"]
+  },
+  {
+    "url": "medium.com",
+    "keywords": ["tutorial", "guide", "article", "blog", "how to", "learn", "example", "explanation"]
+  },
+  {
+    "url": "youtube.com",
+    "keywords": ["video", "tutorial", "demonstration", "visual", "watch", "learn"]
+  },
+  {
+    "url": "wikipedia.org",
+    "keywords": ["definition", "history", "background", "encyclopedia", "facts", "information", "overview"]
+  }
+]
