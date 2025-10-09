@@ -1,6 +1,6 @@
-# MCP DuckDuckGo Server
+# MCP WebSearch Server
 
-A Model Context Protocol (MCP) server that provides DuckDuckGo search and web content fetching capabilities using the modern TypeScript SDK with dual transport support.
+A Model Context Protocol (MCP) server that provides intelligent web search and content fetching capabilities using the modern TypeScript SDK with dual transport support. Features DuckDuckGo as primary search engine with automatic Brave Search fallback.
 
 ## Features
 
@@ -11,7 +11,7 @@ A Model Context Protocol (MCP) server that provides DuckDuckGo search and web co
 
 ### Search Tool
 - **Function**: `search`
-- **Description**: Search DuckDuckGo for web results with intelligent content parsing
+- **Description**: Intelligent web search with DuckDuckGo as primary engine and Brave Search as automatic fallback
 - **Parameters**:
   - `query` (required): Search query string
   - `maxResults` (optional): Maximum number of results (default: 10, max: 50)
@@ -22,8 +22,13 @@ A Model Context Protocol (MCP) server that provides DuckDuckGo search and web co
 - URL
 - Keywords (extracted intelligently)
 - Summary (smart content analysis, not just first paragraph)
+- Search provider used (DuckDuckGo, Brave, or "Brave (DDG suspended)")
 
-**Preferred Sites**: Automatically enhances queries by adding `site:` operators for relevant domains based on keyword matching. Configure via `preferred_sites.json` in the project root.
+**Advanced Features**:
+- **Automatic Fallback**: Switches to Brave Search when DuckDuckGo is rate limited or blocked
+- **Rate Limiting Protection**: Intelligent request spacing and user agent rotation
+- **Suspension Logic**: Temporarily suspends problematic providers with exponential backoff
+- **Preferred Sites**: Automatically enhances queries by adding `site:` operators for relevant domains based on keyword matching. Configure via `preferred_sites.json` in the project root.
 
 ### Fetch Tool
 - **Function**: `fetch`
@@ -43,8 +48,10 @@ A Model Context Protocol (MCP) server that provides DuckDuckGo search and web co
 The project follows a clean architecture pattern with modern MCP SDK:
 
 - **`src/index.ts`**: Main MCP server using `McpServer` and dual transport support
-- **`src/tools/search-tool.ts`**: DuckDuckGo search implementation
+- **`src/tools/search-tool.ts`**: Multi-provider search implementation with intelligent fallback
 - **`src/tools/fetch-tool.ts`**: URL content fetching implementation
+- **`src/providers/`**: Search provider implementations (DuckDuckGo, Brave)
+- **`src/utils/`**: Shared utilities (request management, preferred sites)
 
 ## Usage
 
@@ -198,33 +205,60 @@ The server includes comprehensive error handling for:
 ### Debug Mode
 
 Enable debug logging with the `--debug` flag to see detailed error information:
-- **Search Tool**: Shows query and HTTP response codes for failed requests
+- **Search Tool**: Shows query, provider selection, and HTTP response codes
 - **Fetch Tool**: Shows URL and HTTP response codes for failed requests
-- **Rate Limiting Detection**: Identifies when DuckDuckGo may be blocking automated requests
+- **Provider Fallback**: Shows when switching between DuckDuckGo and Brave Search
+- **Rate Limiting Detection**: Identifies when providers may be blocking automated requests
 
 ```bash
-# Example debug output for failed search
-[DEBUG] Search failed for query "test": HTTP 503 Service Unavailable
+# Example debug output for provider fallback
+[DEBUG] DuckDuckGo appears rate limited, suspending and falling back to Brave
+[DEBUG] DuckDuckGo suspended for 20 minutes (suspension #1)
+[DEBUG] Using Brave Search as fallback
 
 # Example debug output for rate limiting
 [DEBUG] Rate limited by DuckDuckGo: HTTP 429 Too Many Requests
 [DEBUG] Possible rate limiting detected for query "test"
 [DEBUG] Received homepage instead of search results (14262 chars)
 
-# Example debug output for failed fetch
-[DEBUG] Fetch failed for URL "https://invalid-site.com": HTTP 404 Not Found
+# Example debug output for successful search
+[DEBUG] DuckDuckGo working normally, reset suspension count
 ```
 
-### Rate Limiting Detection
+### Rate Limiting & Provider Management
 
-The search tool can detect when DuckDuckGo is blocking or rate limiting requests:
+The search tool intelligently manages multiple providers to ensure reliable results:
 
-- **HTTP Status Codes**: Detects 429 (Too Many Requests), 503 (Service Unavailable), 403 (Forbidden)
+- **Automatic Detection**: Detects 429 (Too Many Requests), 503 (Service Unavailable), 403 (Forbidden)
 - **Content Analysis**: Identifies when homepage is served instead of search results
+- **Provider Suspension**: Temporarily suspends problematic providers with exponential backoff
+- **Seamless Fallback**: Automatically switches to Brave Search when DuckDuckGo is unavailable
 - **CAPTCHA Detection**: Recognizes CAPTCHA challenges in responses
 - **Pattern Matching**: Detects "blocked" or "too many requests" messages
 
 When rate limiting is detected, the tool will show specific debug messages indicating the type of blocking encountered.
+
+## Provider Architecture
+
+The search functionality uses a clean provider architecture for maintainability and reliability:
+
+### Search Providers
+- **DuckDuckGo Provider** (`src/providers/duckduckgo-provider.ts`): Primary search engine with comprehensive rate limiting detection
+- **Brave Provider** (`src/providers/brave-provider.ts`): Fallback search engine with enhanced query formatting and quality filtering
+- **Base Provider** (`src/providers/base-provider.ts`): Shared functionality for keyword extraction, summary generation, and domain parsing
+
+### Fallback Logic
+1. **Primary**: Attempts DuckDuckGo search first
+2. **Detection**: Monitors for rate limiting, blocking, or poor results
+3. **Suspension**: Temporarily suspends DuckDuckGo with exponential backoff (20min → 40min → 80min)
+4. **Fallback**: Switches to Brave Search during suspension periods
+5. **Recovery**: Automatically resumes DuckDuckGo when suspension expires
+
+### Benefits
+- **Reliability**: Never fails due to single provider issues
+- **Quality**: Brave Search provides excellent results when DuckDuckGo is unavailable
+- **Maintainability**: Easy to add new search providers or modify existing ones
+- **Transparency**: Response indicates which provider was used
 
 ## License
 
