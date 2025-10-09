@@ -7,6 +7,8 @@ import express, { Request, Response } from 'express';
 import { z } from 'zod';
 import { WebSearchTool } from "./tools/search-tool.js";
 import { ContentFetchTool } from "./tools/fetch-tool.js";
+import { toolDescriptions, parameterDescriptions } from "./descriptions.js";
+import cors from 'cors';
 
 // Create an MCP server
 const server = new McpServer({
@@ -27,11 +29,11 @@ server.registerTool(
   'search',
   {
     title: 'Web Search with Fallback',
-    description: 'Intelligent web search using DuckDuckGo as primary search engine with Brave Search as fallback. Features: 1) Automatic query enhancement using preferred sites configuration for tech queries (GitHub, StackOverflow, MDN, etc.), 2) Built-in rate limiting protection with intelligent request spacing and header rotation, 3) Automatic fallback to Brave Search when DuckDuckGo is rate limited or blocked, 4) Rich results with extracted keywords and intelligent summaries, 5) Search provider identification in results, 6) Debug mode support for troubleshooting. Results include title, URL, keywords array, intelligent summary, and search provider used. Handles up to 50 results with optional date filtering.',
+    description: toolDescriptions.search,
     inputSchema: {
-      query: z.string().describe('Search query string - will be automatically enhanced with relevant site: operators if applicable'),
-      maxResults: z.number().optional().default(10).describe('Maximum number of results to return (default: 10, max: 50)'),
-      dateFilter: z.enum(['d', 'w', 'm', 'y']).optional().describe('Filter results by date: d=past day, w=past week, m=past month, y=past year'),
+      query: z.string().describe(parameterDescriptions.search.query),
+      maxResults: z.number().optional().default(10).describe(parameterDescriptions.search.maxResults),
+      dateFilter: z.enum(['d', 'w', 'm', 'y']).optional().describe(parameterDescriptions.search.dateFilter),
     }
   },
   async (args) => {
@@ -56,9 +58,9 @@ server.registerTool(
   'fetch',
   {
     title: 'URL Content Fetcher',
-    description: 'Fetch and extract content from a URL',
+    description: toolDescriptions.fetch,
     inputSchema: {
-      url: z.string().describe('URL to fetch content from'),
+      url: z.string().describe(parameterDescriptions.fetch.url),
     }
   },
   async (args) => {
@@ -85,14 +87,29 @@ async function main() {
   const port = parseInt(args.find(arg => arg.startsWith('--port='))?.split('=')[1] || '3000');
 
   if (useStdio) {
+
     // Use stdio transport
     const transport = new StdioServerTransport();
     await server.connect(transport);
     console.error("MCP DuckDuckGo server running on stdio");
     if (debugMode) console.error("Debug mode enabled");
+
   } else {
+
     // Use HTTP streaming transport (default)
     const app = express();
+
+    // Apply CORS middleware BEFORE other middleware
+    app.use(
+      cors({
+        origin: '*',
+        exposedHeaders: ['Mcp-Session-Id'],
+        allowedHeaders: ['Content-Type', 'mcp-session-id', 'mcp-protocol-version'],
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        credentials: false
+      })
+    );
+
     app.use(express.json());
 
     app.post('/mcp', async (req, res) => {

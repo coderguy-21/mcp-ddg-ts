@@ -1,5 +1,6 @@
 import fetch from "node-fetch";
 import * as cheerio from "cheerio";
+import { userAgents } from "../descriptions.js";
 
 export interface FetchArguments {
   url: string;
@@ -20,7 +21,6 @@ export interface FetchResult {
 }
 
 export class ContentFetchTool {
-  private readonly userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36";
   private readonly timeout = 10000; // 10 seconds
   private readonly debug: boolean;
 
@@ -30,14 +30,14 @@ export class ContentFetchTool {
 
   async execute(args: FetchArguments) {
     const { url } = args;
-    
+
     if (!url || !this.isValidUrl(url)) {
       throw new Error("Valid URL parameter is required");
     }
 
     try {
       const result = await this.fetchContent(url);
-      
+
       return {
         content: [
           {
@@ -67,7 +67,7 @@ export class ContentFetchTool {
     try {
       const response = await fetch(url, {
         headers: {
-          "User-Agent": this.userAgent,
+          "User-Agent": userAgents.fetchAgent,
           "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
           "Accept-Language": "en-US,en;q=0.5",
           "Accept-Encoding": "gzip, deflate",
@@ -85,7 +85,7 @@ export class ContentFetchTool {
       }
 
       const contentType = response.headers.get("content-type") || "";
-      
+
       if (!contentType.includes("text/html")) {
         throw new Error(`Unsupported content type: ${contentType}`);
       }
@@ -113,16 +113,16 @@ export class ContentFetchTool {
 
   private parseHtmlContent(html: string, url: string): Omit<FetchResult, "metadata"> {
     const $ = cheerio.load(html);
-    
+
     // Extract title
     const title = this.extractTitle($);
-    
+
     // Extract main content
     const content = this.extractMainContent($);
-    
+
     // Generate keywords
     const keywords = this.extractKeywords(title, content);
-    
+
     // Create intelligent summary
     const summary = this.createIntelligentSummary(title, content, url);
 
@@ -156,7 +156,7 @@ export class ContentFetchTool {
   private extractMainContent($: cheerio.CheerioAPI): string {
     // Remove unwanted elements
     $("script, style, nav, header, footer, aside, .advertisement, .ads, .sidebar").remove();
-    
+
     // Try to find main content areas
     const contentSelectors = [
       "main",
@@ -196,20 +196,20 @@ export class ContentFetchTool {
   private extractKeywords(title: string, content: string): string[] {
     const text = `${title} ${content}`.toLowerCase();
     const words = text.match(/\b[a-z]{4,}\b/g) || [];
-    
+
     // Extended stop words list
     const stopWords = new Set([
       "the", "and", "for", "are", "but", "not", "you", "all", "can", "had", "her", "was", "one", "our", "out", "day", "get", "has", "him", "his", "how", "man", "new", "now", "old", "see", "two", "way", "who", "boy", "did", "its", "let", "put", "say", "she", "too", "use", "with", "have", "this", "will", "your", "from", "they", "know", "want", "been", "good", "much", "some", "time", "very", "when", "come", "here", "just", "like", "long", "make", "many", "over", "such", "take", "than", "them", "well", "were"
     ]);
-    
+
     const filtered = words.filter(word => !stopWords.has(word) && word.length >= 4);
-    
+
     // Count frequency
     const wordCount = new Map<string, number>();
     filtered.forEach(word => {
       wordCount.set(word, (wordCount.get(word) || 0) + 1);
     });
-    
+
     // Return top keywords (minimum frequency of 2 for longer content)
     const minFreq = content.length > 1000 ? 2 : 1;
     return Array.from(wordCount.entries())
@@ -226,7 +226,7 @@ export class ContentFetchTool {
 
     // Split content into paragraphs and sentences
     const paragraphs = content.split(/\n\s*\n/).filter(p => p.trim().length > 20);
-    
+
     if (paragraphs.length === 0) {
       return this.createFallbackSummary(content, title);
     }
@@ -238,14 +238,14 @@ export class ContentFetchTool {
     for (let i = 0; i < Math.min(paragraphs.length, 5); i++) {
       const paragraph = paragraphs[i];
       const sentences = paragraph.split(/[.!?]+/).filter(s => s.trim().length > 10);
-      
+
       // Score based on length, sentence count, and position
       const lengthScore = Math.min(paragraph.length / 200, 1);
       const sentenceScore = Math.min(sentences.length / 3, 1);
       const positionScore = i === 0 ? 0.8 : 1; // Slight penalty for first paragraph
-      
+
       const score = (lengthScore + sentenceScore) * positionScore;
-      
+
       if (score > bestScore && paragraph.length > 80) {
         bestScore = score;
         bestParagraph = paragraph;
@@ -255,7 +255,7 @@ export class ContentFetchTool {
     // Extract 2-3 key sentences from the best paragraph
     const sentences = bestParagraph.split(/[.!?]+/).filter(s => s.trim().length > 15);
     let summary = "";
-    
+
     for (let i = 0; i < Math.min(sentences.length, 3); i++) {
       const sentence = sentences[i].trim();
       if ((summary + sentence).length <= 300) {
@@ -277,11 +277,11 @@ export class ContentFetchTool {
     const words = content.split(/\s+/);
     const summaryWords = words.slice(0, 50);
     let summary = summaryWords.join(" ");
-    
+
     if (summary.length < 100) {
       summary = `${title}: ${summary}`;
     }
-    
+
     // Clean up and ensure proper ending
     summary = summary.replace(/[.!?]*$/, "");
     if (summary.length > 200) {
@@ -289,7 +289,7 @@ export class ContentFetchTool {
     } else {
       summary += ".";
     }
-    
+
     return summary;
   }
 
