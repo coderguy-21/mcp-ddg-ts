@@ -10,7 +10,8 @@
     "dev": "tsc && node dist/index.js",
     "test": "npm run build && node tests/test-provider-refactor.mjs",
     "test:providers": "npm run build && node tests/test-provider-refactor.mjs",
-    "test:brave": "npm run build && node tests/test-brave.mjs"
+    "test:brave": "npm run build && node tests/test-brave.mjs",
+    "gencerts": "node gencerts.js"
   },
   "keywords": [
     "mcp",

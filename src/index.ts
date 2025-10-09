@@ -4,6 +4,9 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import express, { Request, Response } from 'express';
+import https from 'https';
+import { readFileSync, existsSync } from 'fs';
+import { join } from 'path';
 import { z } from 'zod';
 import { WebSearchTool } from "./tools/search-tool.js";
 import { ContentFetchTool } from "./tools/fetch-tool.js";
@@ -80,6 +83,34 @@ server.registerTool(
   }
 );
 
+/**
+ * Check for SSL certificates and return HTTPS options if available
+ */
+function getHttpsOptions(): { key: Buffer; cert: Buffer } | null {
+  const certPath = join(process.cwd(), 'certs', 'cert.pem');
+  const keyPath = join(process.cwd(), 'certs', 'key.pem');
+  
+  if (existsSync(certPath) && existsSync(keyPath)) {
+    try {
+      const cert = readFileSync(certPath);
+      const key = readFileSync(keyPath);
+      
+      if (debugMode) {
+        console.error(`[DEBUG] Found SSL certificates:`);
+        console.error(`[DEBUG]   - Certificate: ${certPath}`);
+        console.error(`[DEBUG]   - Private Key: ${keyPath}`);
+      }
+      
+      return { key, cert };
+    } catch (error) {
+      console.error(`⚠️  Error reading SSL certificates: ${error instanceof Error ? error.message : String(error)}`);
+      return null;
+    }
+  }
+  
+  return null;
+}
+
 async function main() {
   // Parse command line arguments
   const args = process.argv.slice(2);
@@ -127,16 +158,41 @@ async function main() {
       await transport.handleRequest(req, res, req.body);
     });
 
-    app.listen(port, () => {
-      console.error(`MCP WebSearch server running on http://localhost:${port}/mcp`);
-      console.error("Use --stdio flag to run in stdio mode");
-      console.error(`Use --port=<number> to specify a different port (default: 3000)`);
-      console.error("Use --debug flag to enable debug logging");
-      if (debugMode) console.error("Debug mode enabled");
-    }).on('error', error => {
-      console.error('Server error:', error);
-      process.exit(1);
-    });
+    // Check for HTTPS certificates
+    const httpsOptions = getHttpsOptions();
+    const protocol = httpsOptions ? 'https' : 'http';
+    const protocolName = protocol.toUpperCase();
+
+    if (httpsOptions) {
+      // Create HTTPS server
+      const httpsServer = https.createServer(httpsOptions, app);
+      
+      httpsServer.listen(port, () => {
+        console.error(`🔒 MCP WebSearch server running on ${protocol}://localhost:${port}/mcp`);
+        console.error("📜 Using SSL certificates from ./certs/ directory");
+        console.error("Use --stdio flag to run in stdio mode");
+        console.error(`Use --port=<number> to specify a different port (default: 3000)`);
+        console.error("Use --debug flag to enable debug logging");
+        console.error("💡 To disable HTTPS, remove or rename the ./certs/ directory");
+        if (debugMode) console.error("Debug mode enabled");
+      }).on('error', error => {
+        console.error('HTTPS Server error:', error);
+        process.exit(1);
+      });
+    } else {
+      // Create HTTP server
+      app.listen(port, () => {
+        console.error(`🌐 MCP WebSearch server running on ${protocol}://localhost:${port}/mcp`);
+        console.error("Use --stdio flag to run in stdio mode");
+        console.error(`Use --port=<number> to specify a different port (default: 3000)`);
+        console.error("Use --debug flag to enable debug logging");
+        console.error("💡 Run 'npm run gencerts' to enable HTTPS with self-signed certificates");
+        if (debugMode) console.error("Debug mode enabled");
+      }).on('error', error => {
+        console.error('HTTP Server error:', error);
+        process.exit(1);
+      });
+    }
   }
 }
 
