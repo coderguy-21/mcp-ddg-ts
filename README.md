@@ -139,6 +139,28 @@ POST to `http://localhost:3000/mcp` with MCP protocol messages.
 - **Clean Modern API**: Uses latest MCP SDK patterns with `McpServer`
 - **Debug Logging**: Optional debug output for HTTP errors with `--debug` flag
 - **Preferred Sites**: Intelligent query enhancement with domain-specific targeting
+- **Intelligent Rate Limiting Protection**: Automatic request management to prevent blocking
+
+## Intelligent Request Management
+
+The search tool includes built-in protection against rate limiting:
+
+### **Automatic Protections:**
+- **Request Spacing**: Minimum 2-second delay between requests
+- **Rate Limiting**: Maximum 10 requests per minute with automatic queuing
+- **Random Delays**: 0-3 second random jitter to appear more human-like
+- **User Agent Rotation**: Cycles through 5 different realistic browser user agents
+- **Header Variation**: Randomly includes additional headers like DNT and Cache-Control
+
+### **How It Works:**
+```bash
+[DEBUG] Request #1 approved (1 in last minute)
+[DEBUG] Adding random delay: 2s
+[DEBUG] Minimum delay protection: waiting 1s
+[DEBUG] Rate limit protection: waiting 45s (10 requests in last minute)
+```
+
+The system automatically manages request timing to stay within reasonable limits and reduce the likelihood of being detected as a bot.
 
 ## Preferred Sites Configuration
 
@@ -178,14 +200,31 @@ The server includes comprehensive error handling for:
 Enable debug logging with the `--debug` flag to see detailed error information:
 - **Search Tool**: Shows query and HTTP response codes for failed requests
 - **Fetch Tool**: Shows URL and HTTP response codes for failed requests
+- **Rate Limiting Detection**: Identifies when DuckDuckGo may be blocking automated requests
 
 ```bash
 # Example debug output for failed search
 [DEBUG] Search failed for query "test": HTTP 503 Service Unavailable
 
+# Example debug output for rate limiting
+[DEBUG] Rate limited by DuckDuckGo: HTTP 429 Too Many Requests
+[DEBUG] Possible rate limiting detected for query "test"
+[DEBUG] Received homepage instead of search results (14262 chars)
+
 # Example debug output for failed fetch
 [DEBUG] Fetch failed for URL "https://invalid-site.com": HTTP 404 Not Found
 ```
+
+### Rate Limiting Detection
+
+The search tool can detect when DuckDuckGo is blocking or rate limiting requests:
+
+- **HTTP Status Codes**: Detects 429 (Too Many Requests), 503 (Service Unavailable), 403 (Forbidden)
+- **Content Analysis**: Identifies when homepage is served instead of search results
+- **CAPTCHA Detection**: Recognizes CAPTCHA challenges in responses
+- **Pattern Matching**: Detects "blocked" or "too many requests" messages
+
+When rate limiting is detected, the tool will show specific debug messages indicating the type of blocking encountered.
 
 ## License
 
