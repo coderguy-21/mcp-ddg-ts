@@ -1,7 +1,7 @@
 {
-  "name": "mcp-ddg-server",
+  "name": "mcp-websearch-server",
   "version": "1.0.0",
-  "description": "MCP server for DuckDuckGo search and content fetching",
+  "description": "MCP server for intelligent web search with DuckDuckGo and Bing fallback, plus content fetching",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
@@ -10,7 +10,7 @@
     "dev": "tsc && node dist/index.js",
     "watch": "tsc -w"
   },
-  "keywords": ["mcp", "duckduckgo", "search", "fetch"],
+  "keywords": ["mcp", "websearch", "duckduckgo", "bing", "search", "fetch", "fallback"],
   "author": "",
   "license": "MIT",
   "dependencies": {

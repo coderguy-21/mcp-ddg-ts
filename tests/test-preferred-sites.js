@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 
 // Test script for preferred sites functionality
-import { DuckDuckGoSearchTool } from "./dist/tools/search-tool.js";
+import { WebSearchTool } from "../dist/tools/search-tool.js";
 
 async function testPreferredSites() {
   console.log("Testing Preferred Sites Functionality");
   console.log("=====================================");
   
-  const searchTool = new DuckDuckGoSearchTool(true); // Enable debug mode
+  const searchTool = new WebSearchTool(true); // Enable debug mode
   
   // Test cases that should trigger preferred sites
   const testQueries = [

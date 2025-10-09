@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 
 // Simple test to check if rate limiting has been resolved
-import { DuckDuckGoSearchTool } from "./dist/tools/search-tool.js";
+import { WebSearchTool } from "../dist/tools/search-tool.js";
 
 async function testRateLimitStatus() {
   console.log("Testing Current Rate Limit Status");
   console.log("=================================");
   
-  const searchTool = new DuckDuckGoSearchTool(true); // Enable debug mode
+  const searchTool = new WebSearchTool(true); // Enable debug mode
   
   // Use a simple, common query that should return results
   const testQuery = "weather today";

@@ -3,8 +3,8 @@
 // Simple test script to verify the MCP server functionality
 // This is not a proper MCP client but demonstrates the tool functions
 
-import { DuckDuckGoSearchTool } from "./dist/tools/search-tool.js";
-import { ContentFetchTool } from "./dist/tools/fetch-tool.js";
+import { DuckDuckGoSearchTool } from "../dist/tools/search-tool.js";
+import { ContentFetchTool } from "../dist/tools/fetch-tool.js";
 
 async function testSearch() {
   console.log("Testing DuckDuckGo Search Tool...");

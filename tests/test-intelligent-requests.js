@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 
 // Test intelligent request management
-import { DuckDuckGoSearchTool } from "./dist/tools/search-tool.js";
+import { WebSearchTool } from "../dist/tools/search-tool.js";
 
 async function testIntelligentRequests() {
   console.log("Testing Intelligent Request Management");
   console.log("=====================================");
   
-  const searchTool = new DuckDuckGoSearchTool(true); // Enable debug mode
+  const searchTool = new WebSearchTool(true); // Enable debug mode
   
   const testQueries = [
     "simple test query",
